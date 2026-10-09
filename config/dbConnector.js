@@ -1,11 +1,11 @@
-import { Client } from "pg";
+import { Pool } from "pg";
+import 'dotenv/config'
 
-const con = new Client({
-        host: "localhost",
-        port: 5432,
-        user: "postgres",
-        password: "hubert",
-        database: "authtest"
+const con = new Pool({
+        connectionString : process.env.DATABASE_URL,
+        ssl : {
+            rejectUnauthorized : false
+        }
     })
 
 const dbConnector = () => {
