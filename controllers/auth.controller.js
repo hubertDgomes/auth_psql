@@ -93,5 +93,27 @@ const loginController = async (req , res) => {
 }
 
 
+const logoutController = async (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    path: "/",
+  })
+  return res.status(200).json({ message: "Logout Successfully!" })
+}
 
-export default {signupController , loginController}
+const getMe = async (req, res) => {
+    const userId = req.user.id;
+    const user_query = "select * from userdata where sl_no = $1"
+    const getData = await con.query(user_query, [userId])
+
+    return res.status(200).json({
+        message: "User data retrieved successfully",
+        user: getData.rows[0]
+    });
+}
+
+
+
+export default {signupController , loginController, logoutController , getMe}
