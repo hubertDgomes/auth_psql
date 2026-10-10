@@ -10,15 +10,39 @@ const COOKIE_OPTIONS = {
 };
 
 const signupController = async (req, res) => {
-    const { name, email, password } = req.body;
+    const {
+        name,
+        email,
+        password,
+        phone,
+        age,
+        blood_group,
+        location,
+        photo_url,
+        is_available,
+        last_donation_date,
+        health_notes,
+    } = req.body;
 
-    if (!name || !email || !password) {
-        return res.status(400).json({ message: "All fields are required." });
+    const requiredFields = [
+        name,
+        email,
+        password,
+        blood_group,
+        location,
+        phone,
+        age,
+    ];
+
+    if (requiredFields.some((field) => field === undefined || field === null || field === "")) {
+        return res.status(400).json({
+            message: "Name, email, password, blood_group, and location are required.",
+        });
     }
 
     try {
         const check = await con.query(
-            "SELECT 1 FROM userdata WHERE email = $1",
+            "SELECT 1 FROM users WHERE email = $1",
             [email]
         );
 
@@ -27,14 +51,30 @@ const signupController = async (req, res) => {
         }
 
         const datas = await con.query(
-            "INSERT INTO userdata (name, email, password) VALUES ($1, $2, $3) RETURNING sl_no, name, email",
-            [name, email, password]
+            `INSERT INTO users (
+                name, email, password, phone, age, blood_group, location,
+                photo_url, is_available, last_donation_date, health_notes
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            RETURNING id, name, email`,
+            [
+                name,
+                email,
+                password,
+                phone || null,
+                age === "" || age == null ? null : age,
+                blood_group,
+                location,
+                photo_url || null,
+                is_available ?? true,
+                last_donation_date || null,
+                health_notes || null,
+            ]
         );
 
         const user = datas.rows[0]
 
         const token = jwt.sign(
-            { id: user.sl_no, email: user.email },
+            { id: user.id, email: user.email },
             process.env.JWT_SECRET_KEY,
             { expiresIn: "7d" }
         )
@@ -43,7 +83,7 @@ const signupController = async (req, res) => {
         return res.status(201).json({
             message: "User created successfully",
             token,
-            user: { id: user.sl_no, name: user.name, email: user.email },
+            user: { id: user.id, name: user.name, email: user.email },
         });
 
 
@@ -59,7 +99,7 @@ const loginController = async (req , res) => {
         return res.status(400).json({message : "All fields are reqired."})
     }
 
-    const check_user = "select * from userdata where email = $1"
+    const check_user = "select * from users where email = $1"
     
     const duplicateUser = await con.query(check_user , [email])
     const user = duplicateUser.rows.length
@@ -67,19 +107,19 @@ const loginController = async (req , res) => {
         return res.status(404).json({message : "The user does not exist!"})
     }
 
-    const check_password = "select * from userdata where email = $1 and password = $2"
+    const check_password = "select * from users where email = $1 and password = $2"
     const checkPassword = await con.query(check_password , [email , password])
     const validUser = checkPassword.rows.length
     if(validUser == 0){
         return res.status(401).json({message : "The password is incorrect!"})
     }
 
-    const user_query = "select * from userdata where email = $1"
+    const user_query = "select * from users where email = $1"
     const userData = await con.query(user_query , [email])
     const userInfo = userData.rows[0]
 
     const token = jwt.sign(
-        { id: userInfo.sl_no, email: userInfo.email },
+        { id: userInfo.id, email: userInfo.email },
         process.env.JWT_SECRET_KEY,
         { expiresIn: "7d" }
     )
@@ -87,7 +127,7 @@ const loginController = async (req , res) => {
     return res.status(200).json({
         message: "Login successful",
         token,
-        user: { id: userInfo.sl_no, name: userInfo.name, email: userInfo.email },
+        user: { id: userInfo.id, name: userInfo.name, email: userInfo.email },
     });
     
 }
@@ -105,7 +145,7 @@ const logoutController = async (req, res) => {
 
 const getMe = async (req, res) => {
     const userId = req.user.id;
-    const user_query = "select * from userdata where sl_no = $1"
+    const user_query = "select * from users where id = $1"
     const getData = await con.query(user_query, [userId])
 
     return res.status(200).json({

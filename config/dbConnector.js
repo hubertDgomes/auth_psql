@@ -2,11 +2,11 @@ import { Pool } from "pg";
 import 'dotenv/config'
 
 const con = new Pool({
-        connectionString : process.env.DATABASE_URL,
-        ssl : {
-            rejectUnauthorized : false
-        }
-    })
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
+})
 
 const dbConnector = () => {
 
