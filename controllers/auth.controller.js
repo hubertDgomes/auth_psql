@@ -1,6 +1,7 @@
 import { con } from "../config/dbConnector.js";
 import jwt from 'jsonwebtoken'
 import 'dotenv/config'
+import imageUpload from "../middleware/cloudinaryMiddleware.js";
 
 const COOKIE_OPTIONS = {
     httpOnly: true,
@@ -18,7 +19,6 @@ const signupController = async (req, res) => {
         age,
         blood_group,
         location,
-        photo_url,
         is_available,
         last_donation_date,
         health_notes,
@@ -36,8 +36,12 @@ const signupController = async (req, res) => {
 
     if (requiredFields.some((field) => field === undefined || field === null || field === "")) {
         return res.status(400).json({
-            message: "Name, email, password, blood_group, and location are required.",
+            message: "Name, email, password, blood_group, location, phone, and age are required.",
         });
+    }
+
+    if (!req.file) {
+        return res.status(400).json({ message: "A photo_url file is required." });
     }
 
     try {
@@ -49,6 +53,8 @@ const signupController = async (req, res) => {
         if (check.rows.length > 0) {
             return res.status(409).json({ message: "The user already exists!" });
         }
+
+        const imgUrl = await imageUpload(req.file.path);
 
         const datas = await con.query(
             `INSERT INTO users (
@@ -64,7 +70,7 @@ const signupController = async (req, res) => {
                 age === "" || age == null ? null : age,
                 blood_group,
                 location,
-                photo_url || null,
+                imgUrl.secure_url,
                 is_available ?? true,
                 last_donation_date || null,
                 health_notes || null,
@@ -89,7 +95,7 @@ const signupController = async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ message: "Database error" });
+        return res.status(500).json({ message: "Failed to upload photo or create account." });
     }
 };
 
