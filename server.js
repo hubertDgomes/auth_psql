@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser'
 import 'dotenv/config'
 import path from "path"
 import { fileURLToPath } from "url"
+import cors from 'cors'
 
 const app = express()
 const __filename = fileURLToPath(import.meta.url)
@@ -14,6 +15,10 @@ const PORT = process.env.PORT || 3000
 
 
 app.use(express.json())
+app.use(cors({
+    origin : "http://localhost:5173",
+    credentials : true
+}))
 app.use(cookieParser())
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))

@@ -2,6 +2,7 @@ import express from "express"
 import auth from "../controllers/auth.controller.js"
 import authUser from "../middleware/authMiddleware.js"
 import multer from "multer";
+import editMe from "../controllers/status.controller.js";
 
 
 const router = express.Router()
@@ -23,5 +24,6 @@ router.post("/signup" , upload.single("photo_url") , auth.signupController)
 router.post("/login" , auth.loginController)
 router.post("/logout" , auth.logoutController)
 router.get("/getme" ,authUser, auth.getMe)
+router.patch("/editme" ,authUser, editMe)
 
 export default router
